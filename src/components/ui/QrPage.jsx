@@ -10,7 +10,7 @@ export default function QrPage() {
   const [fontColor, setFontColor] = useState("#000000");
   const [fontFamily, setFontFamily] = useState("Inter");
   const [logoUrl, setLogoUrl] = useState(null);
-  const [emoji, setEmoji] = useState("🍕");
+  const [emoji, setEmoji] = useState("");
   const [isLive, setIsLive] = useState(false);
 
   const [pendingTable, setPendingTable] = useState(0);
@@ -26,10 +26,33 @@ export default function QrPage() {
   const emojiPositions = useRef([]);
 
   const generatePositions = () => {
-    return Array.from({ length: 15 }, () => ({
+    return Array.from({ length: 10 }, () => ({
       left: Math.random() * 220 + 10,
       top: Math.random() * 220 + 10,
     }));
+  };
+
+  const createRoundedImage = (imageUrl) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const size = Math.min(img.width, img.height);
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(img, 0, 0, size, size);
+
+        resolve(canvas.toDataURL());
+      };
+      img.src = imageUrl;
+    });
   };
 
   useEffect(() => {
@@ -42,6 +65,7 @@ export default function QrPage() {
           margin: 8,
           dotsOptions: { color: fgColor, type: "rounded" },
           backgroundOptions: { color: bgColor },
+          imageOptions: { crossOrigin: "anonymous", imageSize: 0.3 },
         });
         emojiPositions.current[i] = generatePositions();
       }
@@ -62,16 +86,23 @@ export default function QrPage() {
         image: logoUrl || undefined,
         dotsOptions: { color: fgColor },
         backgroundOptions: { color: bgColor },
+        imageOptions: {
+          crossOrigin: "anonymous",
+          imageSize: 0.3,
+          hideBackgroundDots: true,
+          margin: 2,
+        },
       });
     });
   }, [bgColor, fgColor, logoUrl, tableCount]);
 
-  const handleLogoUpload = (e) => {
+  const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setPendingLogo(url);
-      if (isLive) setLogoUrl(url);
+      const rawUrl = URL.createObjectURL(file);
+      const roundedUrl = await createRoundedImage(rawUrl);
+      setPendingLogo(roundedUrl);
+      if (isLive) setLogoUrl(roundedUrl);
     }
   };
 
@@ -101,7 +132,7 @@ export default function QrPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="mb-8 text-3xl font-bold">DashBoard</h1>
+      <h1 className="mb-8 text-3xl font-bold">Table QR Generator</h1>
 
       <div className="mb-4 grid gap-4 md:grid-cols-3 lg:grid-cols-4">
         <div className="flex flex-col gap-1">
@@ -147,6 +178,7 @@ export default function QrPage() {
             type="text"
             maxLength={2}
             value={pendingEmoji}
+            placeholder="e.g. ❤️"
             onChange={(e) =>
               propagateIfLive(setPendingEmoji, setEmoji)(e.target.value)
             }
