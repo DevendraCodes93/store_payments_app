@@ -132,7 +132,7 @@ export default function QrPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="mb-8 text-3xl font-bold">Table QR Generator</h1>
+      <h1 className="mb-8 text-3xl font-bold">DashBoard</h1>
 
       <div className="mb-4 grid gap-4 md:grid-cols-3 lg:grid-cols-4">
         <div className="flex flex-col gap-1">
